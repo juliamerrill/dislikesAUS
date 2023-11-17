@@ -31,7 +31,7 @@ get_pc_graph <- function(data,
   for(i in 1:nrow(d3_network$links)){
     d3_network$links[i,]$value <-  50*abs(cor_data[d3_network$links[i,]$source + 1,  d3_network$links[i,]$target + 1])
   }
-  browser()
+  #browser()
   sn <- forceNetwork(
     Links = d3_network$links, 
     Nodes = d3_network$nodes, 

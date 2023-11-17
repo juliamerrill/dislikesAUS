@@ -67,18 +67,22 @@ get_top_cors <- function(data, method = "pearson", alpha = .002, prefix = "DS", 
   top_cor
 }
 
-get_all_jennrich_tests <- function(data){
-  full_types <- unique(data$full_type)
-  map_dfr(full_types, function(ft1){
-    map_dfr(full_types, function(ft2){
-      if(ft2 < ft1 ){
+get_all_jennrich_tests <- function(data, grouping_var = "country", var_prefixes = "DS"){
+  groups <- unique(data[[grouping_var]])
+  map_dfr(groups, function(g1){
+    map_dfr(groups, function(g2){
+      if(g2 <= g1 ){
         return(NULL)
       }
-      tmp1 <- data %>% filter(full_type == ft1) %>%  select(starts_with("DS")) %>%  as.matrix()
-      tmp2 <- data %>% filter(full_type == ft2) %>%  select(starts_with("DS")) %>%  as.matrix()
-      ctj <- suppressWarnings(psych::cortest.jennrich(tmp1, tmp2))
       #browser()
-      tibble(full_type1 = ft1, full_type2 = ft2, statistic = ctj$chi2, p = ctj$prob)
+      messagef("Testing %s <-> %s", g1, g2)
+      tmp1 <- data %>% filter(!!sym(grouping_var) == g1) %>%  select(starts_with(var_prefixes)) %>%  as.matrix()
+      tmp2 <- data %>% filter(!!sym(grouping_var) == g2) %>%  select(starts_with(var_prefixes)) %>%  as.matrix()
+      ctj <- suppressWarnings(psych::cortest.jennrich(cor(tmp1), cor(tmp2), nrow(tmp1), nrow(tmp2)))
+      tibble(!!sym(sprintf("%s1", grouping_var)) := g1, 
+             !!sym(sprintf("%s2", grouping_var)) := g2,
+             statistic = ctj$chi2, 
+             p = ctj$prob)
     })
   })
 }

@@ -104,7 +104,7 @@ join_rows <- function(data){
   if(is.null(data[["p_id"]])){
     return(data)
   }
-  browser()
+  #browser()
   ids <- data %>% count(p_id) %>% filter(n > 1) %>% pull(p_id)
   ret <- data %>% filter(!(p_id %in% ids))
   mds_digest <- data %>%
@@ -294,7 +294,12 @@ extract_wide_mds <- function(df){
   map_dfr(ids, function(pid){
     messagef("Processing %s", pid)
     df %>% filter(p_id == pid)   %>% 
-       pivot_wider(id_cols = c("style", "p_id", "SMP.familiarity", "SMP.liking", "MDS.no"), 
+       pivot_wider(id_cols = c("style", 
+                               "p_id", 
+                               "SMP.familiarity", 
+                               "SMP.liking", 
+                               "MDS.no", 
+                               "DEG.country_of_residence"), 
                    names_from = c(MDS.item), 
                    values_from = MDS.rating, names_prefix = "MDS.")  
 
@@ -338,15 +343,22 @@ setup_workspace <- function(results = "data_raw", reload = F){
   all_styles <<- readxl::read_xlsx("data/SMP_AUS_styles.xlsx")
   assign("all_styles", all_styles, globalenv())
   if(reload || !file.exists("data/master.rds")){
-    master <- read_data(results)
-    master <- master %>% mutate(age = round(DEG.age/12),
-                                gender = factor(GIN.gender),
-                                DEG.financial = factor(DEG.financial_labels[as.integer(DEG.financial)], levels = DEG.financial_labels),
-                                DEG.life_circumstances = factor(DEG.life_circumstances_labels[as.integer(DEG.life_circumstances)], levels = DEG.life_circumstances_labels)
-    )
+    # master <- read_data(results)
+    # master <- master %>% mutate(age = round(DEG.age/12),
+    #                             gender = factor(GIN.gender),
+    #                             DEG.financial = factor(DEG.financial_labels[as.integer(DEG.financial)], levels = DEG.financial_labels),
+    #                             DEG.life_circumstances = factor(DEG.life_circumstances_labels[as.integer(DEG.life_circumstances)], levels = DEG.life_circumstances_labels)
+    # )
+    master <- readRDS("data/master.rds")
     
     mds_wide <- extract_wide_mds(master)
-    names(mds_wide)[6:47] <- mds_labels
+    browser()
+    names(mds_wide)[str_detect(names(mds_wide), "^MDS.[0-9]+")] <- mds_labels
+    mds_wide <- mds_wide %>% select(p_id, style,
+                                    familiarity = SMP.familiarity, 
+                                    liking = SMP.liking, 
+                                    country = DEG.country_of_residence, 
+                                    everything())
     smp <- master %>% 
       select(p_id, 
              style, 
