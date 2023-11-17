@@ -1059,3 +1059,37 @@ dislikes_profile_plot <- function(meta, countries = NULL, least_mentions = .0){
   }
   q
 }
+
+heatmap_dislikes <- function(data = mds_wide, country_filter = NULL, dislike_scale = T){
+  tmp <- data %>% 
+    mutate(country = lump_countries(country), 
+           style = dress_up_styles((style))) 
+  if(!is.null(country_filter)){
+    tmp <- tmp %>% filter(country %in% country_filter)
+  }
+  
+  if(dislike_scale){
+    tmp <-  tmp %>% select(starts_with("DS"), style)  
+  }
+  else{
+    tmp <-  tmp %>% select(starts_with(c("emo", "music", "lyrics", "social", "body")), style)  
+  }
+  tmp <- tmp  %>% 
+    group_by(style) %>% 
+    summarise(across(where(is.numeric), mean))  %>% 
+    pivot_longer(-style) %>% 
+    group_by(name) %>% 
+    mutate(value_z = scale(value) %>% as.numeric())%>% 
+    ungroup() %>% 
+    mutate(label_color = value_z < 0) 
+  q <- tmp %>% ggplot(aes(y  = fct_reorder(style, value, sum), 
+                          x = fct_reorder(name, value), 
+                          fill = value_z)) 
+  q <- q + geom_tile() 
+  q <- q + geom_text(aes(label = sprintf("%0.1f", value_z), color = label_color), size = 3)
+  q <- q + scale_fill_viridis_c(option = "inferno") 
+  q <- q + scale_color_manual(values = c("black", "white"), guide = "none") 
+  q <- q + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  q <- q + labs(x = "", y = "")
+  q
+}

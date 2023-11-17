@@ -78,6 +78,9 @@ get_all_jennrich_tests <- function(data, grouping_var = "country", var_prefixes 
       messagef("Testing %s <-> %s", g1, g2)
       tmp1 <- data %>% filter(!!sym(grouping_var) == g1) %>%  select(starts_with(var_prefixes)) %>%  as.matrix()
       tmp2 <- data %>% filter(!!sym(grouping_var) == g2) %>%  select(starts_with(var_prefixes)) %>%  as.matrix()
+      if(g1 == "Soul" && g2 == "Thai EDM"){
+        browser()
+      }
       ctj <- suppressWarnings(psych::cortest.jennrich(cor(tmp1), cor(tmp2), nrow(tmp1), nrow(tmp2)))
       tibble(!!sym(sprintf("%s1", grouping_var)) := g1, 
              !!sym(sprintf("%s2", grouping_var)) := g2,

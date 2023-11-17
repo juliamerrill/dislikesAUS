@@ -137,13 +137,13 @@ get_stable_cor_network2 <- function(data,
   sn <- GGally::ggnet2(sn, node.size = 6, node.color = "red", edge.size = 1, edge.color = "blue")
   sn
 }
-DS_vars <- sort(names(mds_wide)[str_detect(names(mds_wide), "DS_")])
-assign("DS_vars", DS_vars, globalenv())
+
 
 get_stable_cor_network <- function(data, 
                                    directed = TRUE, 
                                    prefix = "DS",
                                    alpha = .002,
+                                   min_r = 0.0,
                                    node.size = 10,
                                    label.size = 5,
                                    legend.size = 5, 
@@ -151,7 +151,9 @@ get_stable_cor_network <- function(data,
   #seed <- sample(1:1000,1)
   #printf("Seed = %d", seed)
   set.seed(872)
-  top_cor <- get_top_cors(data, prefix = prefix, alpha = alpha)
+  top_cor <- get_top_cors(data, prefix = prefix, alpha = alpha) %>% 
+    filter(abs(r) >= min_r)
+  print(summary(top_cor$r))
   #browser()
   cor_data <- top_cor %>% 
     group_by(var1, var2, cor_id) %>% 

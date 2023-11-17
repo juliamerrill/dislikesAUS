@@ -74,6 +74,10 @@ get_sig_stars <- Vectorize(function(p_val){
   
 })
 
+lump_countries <- function(countries){
+  fct_lump_lowfreq(countries, other_level = "OTHER") 
+}
+
 comp_cor_mat_entries <- function(data){
   cor_mat <-  data %>% corrr::correlate()
   vars <- unique(cor_mat$term)
@@ -245,4 +249,43 @@ get_mean_differences <- function(data, group_var, target_var, vars, fn = mean, n
     mutate(grouping = sprintf("%s-%s", groups[1], groups[2])) %>% 
     mutate(p_adj = p.adjust(p.value)) %>% 
     select(target, var, grouping, everything())
+}
+
+get_kripp_alphas <- function(data = mds_wide, vars = DS_vars){
+  data <- data %>%
+    mutate(style = dress_up_styles(style),  
+           COUNTRY = lump_countries(country) %>% as.character()) 
+  countries <- unique(data$COUNTRY)
+  print(countries)
+  map_dfr(vars, function(v){
+    map_dfr(countries, function(c1){
+      map_dfr(countries, function(c2){
+        if(c1 <= c2) {
+          return(NULL)
+        }
+        messagef("Checking %s for %s/%s", v, c1, c2)
+        #if(c1 == "US" && c2 == "UK"){
+        #  browser()
+        #}
+        ka <- data %>% 
+          filter(COUNTRY %in% c(c1, c2))%>% 
+          group_by(style, COUNTRY) %>% 
+          summarise(m = mean(!!sym(v)), .groups = "drop")  %>%
+          pivot_wider(id_cols = COUNTRY, 
+                      names_from = style, 
+                      values_from = m) %>% 
+          select(-COUNTRY) %>% 
+          as.matrix() %>% 
+          irr::kripp.alpha(method = "interval") 
+        tibble(country1 = c1, country2 = c2, var = v, kripp_alpha = ka$value)
+      })
+    })   
+  })
+}
+
+fisher_trafo <- function(x){
+  log((1 + x)/(1 - x)) * .5 
+}
+fisher_inv_trafo <- function(x){
+  (exp(2 * x) - 1)/(exp( 2 * x) + 1)
 }

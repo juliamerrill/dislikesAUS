@@ -273,6 +273,7 @@ add_scores_from_key <- function(data,
                                 impute_method = c("no", "mice", "median")){
   orig_data <- data
   data <- data %>% select(all_of(mds_labels))
+  browser()
   # if(impute_method[1] == "mice"){
   #   data <- impute_mice(data )
   # }
@@ -285,7 +286,13 @@ add_scores_from_key <- function(data,
   factor_names <- key_tmp %>% select(-1) %>% names()
   row.names(keys_cleaned) <- var_names
   item_scores <- psych::scoreItems(keys_cleaned, data)
-  bind_cols(orig_data, item_scores$scores %>% as.data.frame() %>% as_tibble() %>% set_names(factor_names)) 
+  bind_cols(orig_data %>% 
+              select(-all_of(intersect(orig_data %>% names(), 
+                                       key_tmp %>% names()))), 
+            item_scores$scores %>% 
+              as.data.frame() %>% 
+              as_tibble() %>% 
+              set_names(factor_names)) 
 }
 
 extract_wide_mds <- function(df){
@@ -358,7 +365,10 @@ setup_workspace <- function(results = "data_raw", reload = F){
                                     familiarity = SMP.familiarity, 
                                     liking = SMP.liking, 
                                     country = DEG.country_of_residence, 
-                                    everything())
+                                    everything()) %>% 
+      add_scores_from_key()
+    
+    
     smp <- master %>% 
       select(p_id, 
              style, 
@@ -386,6 +396,8 @@ setup_workspace <- function(results = "data_raw", reload = F){
     mds_wide <- readRDS("data/mds_wide.rds")
     
   }
+  DS_vars <- sort(names(mds_wide)[str_detect(names(mds_wide), "DS_")])
+  assign("DS_vars", DS_vars, globalenv())
   assign("smp", smp, globalenv())
   assign("mds_wide", mds_wide, globalenv())
   assign("metadata", metadata, globalenv())
