@@ -6,6 +6,10 @@ printf <- function(...) print(sprintf(...))
 num_predictors <- c("GMS.general", "ART.points", "RAT.ability",  "age")
 cat_predictors <- c("gender")
 
+style_fa_labels <- c("MR3" = "FA.hip_hop", "MR5" = "FA.edm", "MR1" = "FA.black_music", 
+                     "MR7" = "FA.heavy_rock", "MR4" = "FA.indie", 
+                     "MR2" = "FA.religious", "MR6" = "FA.asia_pop",
+                     "MR8" = "FA.light_music", "MR9" = "FA.world")
 
 dummy <- list()
 dummy[["RAT"]] <- tibble(RAT.ability  = NA, RAT.ability_sem  = NA, RAT.num_items = NA)
@@ -383,6 +387,8 @@ setup_workspace <- function(results = "data_raw", reload = F){
     metadata <- master %>%
       #filter(complete) %>%
       select(-c(style, SMP.familiarity, SMP.liking, complete, time_started, MDS.item, MDS.rating, MDS.no)) %>%
+      mutate(SES.economic_status = (as.integer(factor(DEG.financial)) - 2.5)/1.5 +
+               (as.integer(as.factor(DEG.life_circumstances)) - 4)/3) %>%
       distinct() 
     saveRDS(smp, "data/smp.rds")
     saveRDS(mds_wide, "data/mds_wide.rds")
@@ -410,3 +416,35 @@ get_correlations <- function(data, var_x, var_y, method = "pearson"){
   return(ct %>% broom::tidy())
 }
 
+
+add_fa_styles <- function(data = smp, meta = metadata){
+  fam_styles <- data %>% 
+    group_by(style) %>% 
+    summarise(m = mean(familiarity, na.rm = T)) %>% 
+    filter(m >= 1.84) %>% 
+    pull(style)
+  
+  smp_fa <- data %>% 
+    filter(!is.na(liking)) %>% 
+    filter(style %in% fam_styles) %>% 
+    mutate(style = dress_up_styles(style) %>% str_replace("[&]", "_and_")) %>% 
+    pivot_wider(id_cols = c(p_id), 
+              names_from = style, 
+              values_from =liking) 
+  smp_fa_imputed <- smp_fa %>% 
+    select(-p_id) %>% 
+    impute_mice() 
+  
+  fa_smp <-  smp_fa_imputed %>% 
+    psych::fa(9, scores = "tenBerge")  
+  
+  fa_scores <- fa_smp %>% 
+    pluck("scores") %>% 
+    as_tibble()
+  
+  fa_loadings <- fa_smp %>% loadings()
+
+  smp_ext <- bind_cols(smp_fa, fa_scores %>% set_names(style_fa_labels))
+  smp_ext_tpi <- smp_ext %>% left_join(meta %>% select(p_id, starts_with("TP")))
+  return(list(fa = fa_smp, loadings = fa_loadings, smp_fa_tpi = smp_ext_tpi))  
+}
