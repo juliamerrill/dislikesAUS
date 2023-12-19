@@ -289,3 +289,4 @@ fisher_trafo <- function(x){
 fisher_inv_trafo <- function(x){
   (exp(2 * x) - 1)/(exp( 2 * x) + 1)
 }
+

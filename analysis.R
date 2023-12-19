@@ -6,10 +6,14 @@ printf <- function(...) print(sprintf(...))
 num_predictors <- c("GMS.general", "ART.points", "RAT.ability",  "age")
 cat_predictors <- c("gender")
 
-style_fa_labels <- c("MR3" = "FA.hip_hop", "MR5" = "FA.edm", "MR1" = "FA.black_music", 
+style_fa_labels_old <- c("MR3" = "FA.hip_hop", "MR5" = "FA.edm", "MR1" = "FA.black_music", 
                      "MR7" = "FA.heavy_rock", "MR4" = "FA.indie", 
                      "MR2" = "FA.religious", "MR6" = "FA.asia_pop",
                      "MR8" = "FA.light_music", "MR9" = "FA.world")
+style_fa_labels_old <- c("MR3" = "FA.hip_hop", "MR5" = "FA.edm", "MR1" = "FA.black_music", 
+                         "MR7" = "FA.heavy_rock", "MR4" = "FA.indie", 
+                         "MR2" = "FA.religious", "MR6" = "FA.asia_pop",
+                         "MR8" = "FA.light_music", "MR9" = "FA.experimental")
 
 dummy <- list()
 dummy[["RAT"]] <- tibble(RAT.ability  = NA, RAT.ability_sem  = NA, RAT.num_items = NA)
@@ -277,7 +281,7 @@ add_scores_from_key <- function(data,
                                 impute_method = c("no", "mice", "median")){
   orig_data <- data
   data <- data %>% select(all_of(mds_labels))
-  browser()
+  #browser()
   # if(impute_method[1] == "mice"){
   #   data <- impute_mice(data )
   # }
@@ -354,16 +358,16 @@ setup_workspace <- function(results = "data_raw", reload = F){
   all_styles <<- readxl::read_xlsx("data/SMP_AUS_styles.xlsx")
   assign("all_styles", all_styles, globalenv())
   if(reload || !file.exists("data/master.rds")){
-    # master <- read_data(results)
-    # master <- master %>% mutate(age = round(DEG.age/12),
-    #                             gender = factor(GIN.gender),
-    #                             DEG.financial = factor(DEG.financial_labels[as.integer(DEG.financial)], levels = DEG.financial_labels),
-    #                             DEG.life_circumstances = factor(DEG.life_circumstances_labels[as.integer(DEG.life_circumstances)], levels = DEG.life_circumstances_labels)
-    # )
-    master <- readRDS("data/master.rds")
+    master <- read_data(results)
+    master <- master %>% mutate(age = round(DEG.age/12),
+                                gender = factor(GIN.gender),
+                                DEG.financial = factor(DEG.financial_labels[as.integer(DEG.financial)], levels = DEG.financial_labels),
+                                DEG.life_circumstances = factor(DEG.life_circumstances_labels[as.integer(DEG.life_circumstances)], levels = DEG.life_circumstances_labels)
+    )
+    #master <- readRDS("data/master.rds")
     
     mds_wide <- extract_wide_mds(master)
-    browser()
+    #browser()
     names(mds_wide)[str_detect(names(mds_wide), "^MDS.[0-9]+")] <- mds_labels
     mds_wide <- mds_wide %>% select(p_id, style,
                                     familiarity = SMP.familiarity, 
@@ -447,4 +451,17 @@ add_fa_styles <- function(data = smp, meta = metadata){
   smp_ext <- bind_cols(smp_fa, fa_scores %>% set_names(style_fa_labels))
   smp_ext_tpi <- smp_ext %>% left_join(meta %>% select(p_id, starts_with("TP")))
   return(list(fa = fa_smp, loadings = fa_loadings, smp_fa_tpi = smp_ext_tpi))  
+}
+
+add_tpi_residuals <- function(data = metadata){
+  tmp <- data %>% select(starts_with("TPI"), SES.economic_status)
+  tpis <- setdiff(tmp  %>% names(), "SES.economic_status")
+  tmp <- impute_mice(tmp)
+  residuals <- 
+    map_dfc(tpis, function(t){
+      res <- tmp %>% lm(as.formula(sprintf("%s ~SES.economic_status", t)), data = .) %>% residuals()
+      messagef("TPI: %s, %d", t, length(res))
+      ret <- tibble(!!sym(sprintf("%s_res", t)) := res) 
+    })
+  data %>% bind_cols(residuals)
 }
