@@ -1,7 +1,7 @@
 library(tidyverse)
 messagef <- function(...) message(sprintf(...))
 
-setup_workspace <- function(fname = "data/dislikes_data.csv"){
+setup_workspace2 <- function(fname = "data/dislikes_data.csv"){
   master <- readr::read_csv2(fname)
   bad_ids <- master %>% count(p_id) %>% filter(n != 49) %>% pull(p_id)
   bad_ids2 <- master %>% group_by(p_id) %>% summarise(m = sum(is.na(SMP.liking))) %>% filter(m == 49) %>% pull(p_id)
@@ -9,7 +9,7 @@ setup_workspace <- function(fname = "data/dislikes_data.csv"){
   master <- master %>%
     mutate(p_id = sprintf("%04d", as.integer(factor(p_id))),
            is_fan = case_when(is.na(SMP.liking) ~ F, SMP.liking > 4 ~ T, T ~ F))
-  assign("master", master, globalenv())
+  assign("master2", master, globalenv())
 
 }
 
