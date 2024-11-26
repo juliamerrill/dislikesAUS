@@ -367,7 +367,6 @@ setup_workspace <- function(results = "data_raw", reload = F){
     #master <- readRDS("data/master.rds")
     
     mds_wide <- extract_wide_mds(master)
-    #browser()
     names(mds_wide)[str_detect(names(mds_wide), "^MDS.[0-9]+")] <- mds_labels
     mds_wide <- mds_wide %>% select(p_id, style,
                                     familiarity = SMP.familiarity, 

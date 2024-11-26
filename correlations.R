@@ -1,4 +1,5 @@
 library(tidyverse)
+
 fashion_subscale_names <- function(subscale_names){
   str_remove_all(subscale_names, "DS_") %>% 
     str_remove_all("PC_") %>% 
