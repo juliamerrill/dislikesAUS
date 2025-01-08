@@ -1,15 +1,18 @@
 library(tidyverse)
 
+## source on save klicken + setup_workspace() eintippen
+
 messagef <- function(...) message(sprintf(...))
 printf <- function(...) print(sprintf(...))
 
 num_predictors <- c("GMS.general", "ART.points", "RAT.ability",  "age")
 cat_predictors <- c("gender")
 
-style_fa_labels_old <- c("MR3" = "FA.hip_hop", "MR5" = "FA.edm", "MR1" = "FA.black_music", 
-                     "MR7" = "FA.heavy_rock", "MR4" = "FA.indie", 
-                     "MR2" = "FA.religious", "MR6" = "FA.asia_pop",
-                     "MR8" = "FA.light_music", "MR9" = "FA.world")
+style_fa_labels <- c("MR1" = "FA.black_music", "MR2" = "FA.indie", 
+                     "MR3" = "FA.hip_hop",  "MR4" = "FA.edm",
+                     "MR5" = "FA.light_music", "MR7" = "FA.heavy_rock",  
+                     "MR6" = "FA.religious",
+                     "MR8" = "FA.asia_pop", "MR9" = "FA.world")
 style_fa_labels_old <- c("MR3" = "FA.hip_hop", "MR5" = "FA.edm", "MR1" = "FA.black_music", 
                          "MR7" = "FA.heavy_rock", "MR4" = "FA.indie", 
                          "MR2" = "FA.religious", "MR6" = "FA.asia_pop",
@@ -437,7 +440,7 @@ add_fa_styles <- function(data = smp, meta = metadata){
   smp_fa_imputed <- smp_fa %>% 
     select(-p_id) %>% 
     impute_mice() 
-  
+#browser()  
   fa_smp <-  smp_fa_imputed %>% 
     psych::fa(9, scores = "tenBerge")  
   
@@ -464,3 +467,4 @@ add_tpi_residuals <- function(data = metadata){
     })
   data %>% bind_cols(residuals)
 }
+
