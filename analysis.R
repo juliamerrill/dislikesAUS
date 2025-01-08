@@ -205,10 +205,9 @@ parse_mds_data <- function(results){
   person_data <-
     map_dfc(1:length(results), function(i){
       if(nr[i] %in% c("DEG", "MET", "TPI", "GMS")){
-        #browser()
         results[[i]] %>%
           as_tibble() %>%
-          select(-starts_with("q")) %>%
+          select(-starts_with("q", ignore.case = F) ) %>%
           distinct() %>%
           set_names(sprintf("%s.%s", nr[i], names(.) %>% str_replace_all(" ", "_") %>% tolower()))
       }
@@ -353,6 +352,15 @@ dress_up_styles <- function(styles){
     str_replace_all("[/ -]+", "_")  %>%
     tolower()
 }
+qualification_labels <- c("Trade certificate, diploma, or apprenticeship",
+                           "University bachelor degree (e.g., BS or BA with or without honours)",
+                           "University postgraduate qualification (e.g., MA, MS, PhD)",
+                           "None of the above")
+
+relabel_qualification <- function(qualification){
+  qualification[!is.na(as.integer(qualification))] <- qualification_labels[as.integer(qualification[!is.na(as.integer(qualification))])]        
+  qualification
+}
 
 setup_workspace <- function(results = "data_raw", reload = F){
   all_styles <<- readxl::read_xlsx("data/SMP_AUS_styles.xlsx")
@@ -362,8 +370,10 @@ setup_workspace <- function(results = "data_raw", reload = F){
     master <- master %>% mutate(age = round(DEG.age/12),
                                 gender = factor(GIN.gender),
                                 DEG.financial = factor(DEG.financial_labels[as.integer(DEG.financial)], levels = DEG.financial_labels),
-                                DEG.life_circumstances = factor(DEG.life_circumstances_labels[as.integer(DEG.life_circumstances)], levels = DEG.life_circumstances_labels)
+                                DEG.life_circumstances = factor(DEG.life_circumstances_labels[as.integer(DEG.life_circumstances)], levels = DEG.life_circumstances_labels),
+                                DEG.qualification = relabel_qualification(DEG.qualification)
     )
+
     #master <- readRDS("data/master.rds")
     
     mds_wide <- extract_wide_mds(master)
