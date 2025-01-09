@@ -402,7 +402,7 @@ setup_workspace <- function(results = "data_raw", reload = F){
     #master <- master %>% filter(is.na(MDS.no)) %>% select(!starts_with("MDS"))
     metadata <- master %>%
       #filter(complete) %>%
-      select(-c(style, SMP.familiarity, SMP.liking, complete, time_started, MDS.item, MDS.rating, MDS.no)) %>%
+      select(-c(style, SMP.familiarity, SMP.liking, complete, MDS.item, MDS.rating, MDS.no)) %>%
       mutate(SES.economic_status = (as.integer(factor(DEG.financial)) - 2.5)/1.5 +
                (as.integer(as.factor(DEG.life_circumstances)) - 4)/3) %>%
       distinct() 
